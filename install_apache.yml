@@ -4,16 +4,42 @@
   become: true
   tasks:
 
-  - name: update repository index
-    apt:
-      update_cache: true
+  - name: Check Distribution and perform tasks for Debian/Ubuntu
+    block:
+      - name: update repository index
+        apt:
+          update_cache: yes
 
-  - name: install apache2 package
-    apt:
-      name: apache2
-      state: latest
+      - name: install apache2 package
+        apt:
+          name: apache2
+          state: latest
 
-  - name: add php support for apache
-    apt:
-      name: libapache2-mod-php
-      state: latest
+      - name: add php support for apache
+        apt:
+          name: libapache2-mod-php
+          state: latest
+
+    when: ansible_distribution in ["Debian", "Ubuntu"]
+
+  - name: Check Distribution and perfom tasks for Fedora
+    block:
+      - name: update repository index
+        dnf:
+          update_cache: yes
+
+      - name: upgrade all packages to latest
+        dnf:
+          name: "*"
+          state: latest
+
+      - name: install apache2 package
+        dnf:
+          name:
+            - httpd
+            - php-fpm
+          state: latest
+
+    when: ansible_distribution in ["Fedora"]
+
+
