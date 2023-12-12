@@ -1,0 +1,64 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates Ubuntu/Debian
+    tags: always
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_os_family == "Debian"
+
+  - name: install updates CentOS
+    tags: always
+    dnf:
+      update_only: yes
+      update_cache: yes
+    when: ansible_os_family == "RedHat"
+
+- hosts: web_servers
+  become: true
+  tasks:
+
+  - name: run update and install latest apache and php
+    tags: apache,apache2,httpd
+    package:
+      name:
+        - "{{ apache_package }}"
+        - "{{ php_package }}"
+      state: latest
+
+  - name: httpd is running and enabled
+    service:
+      name: "{{ service_package }}"
+      state: started
+      enabled: yes
+
+- hosts: db_servers
+  become: true
+  tasks:
+
+  - name: install mariadb package
+    tags: mariadb,ubuntu,centos,db
+    package:
+      name:
+        - "{{ db_package }}"
+      state: latest
+
+  - name: mariadb is running and enabled
+    service:
+      name: mariadb
+      state: started
+      enabled: yes
+
+- hosts: file_servers
+  become: true
+  tasks:
+
+  - name: install samba package
+    tags: samba
+    package:
+      name: samba
+      state: latest
