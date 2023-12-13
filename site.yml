@@ -4,19 +4,29 @@
   become: true
   pre_tasks:
 
-  - name: install updates Ubuntu/Debian
+  - name: update repo cache OS Family Debian
     tags: always
     apt:
-      upgrade: dist
       update_cache: yes
+    changed_when: false
     when: ansible_os_family == "Debian"
 
-  - name: install updates CentOS
+  - name: updates repo cache OS Family RedHat
     tags: always
     dnf:
-      update_only: yes
       update_cache: yes
+    changed_when: false
     when: ansible_os_family == "RedHat"
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: add ssh key for simone
+    tags: always
+    authorized_key:
+      user: simone
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINiIaQ3H9IKsIwxeD4hPvCuGJ2RCGrnxrDNt/thgWGUf mehrentraut@NANX0AS50363"
 
 - hosts: web_servers
   become: true
@@ -35,6 +45,22 @@
       name: "{{ service_package }}"
       state: started
       enabled: yes
+
+  - name: change email address for admin
+    tags: apache,centos,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin admin@phoenyx.me
+    when: ansible_os_family == "RedHat"
+    register: httpd
+
+  - name: restart httpd (CentOS)
+    tags: apache,centos,httpd
+    service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
 
   - name: copy website to server
     tags: apache,apache2,httpd
